@@ -7,10 +7,8 @@ export const getAllStudyTimesByMonth = async (req, res) => {
 
     // Start of the month
     const startOfMonth = new Date(Date.UTC(year, month, 1))
-    console.log(startOfMonth);
     // End of the month (Note: Setting the month as month + 1 and day as 0 gives us the last day of the desired month)
     const endOfMonth = new Date(Date.UTC(year, month + 1, 0, 23, 59, 59))
-    console.log(endOfMonth);
 
     const studyTimes = await StudyTimeModel.find({
       date: {
@@ -25,18 +23,39 @@ export const getAllStudyTimesByMonth = async (req, res) => {
   }
 }
 
+export const getStudyTimeForToday = async (_, res) => {
+  const startOfDay = new Date()
+  startOfDay.setUTCHours(0, 0, 0, 0)
+
+  const endOfDay = new Date()
+  endOfDay.setUTCHours(23, 59, 59, 999)
+
+  const todayStudyTime = await StudyTimeModel.findOne({
+    date: {
+      $gte: startOfDay,
+      $lt: endOfDay,
+    },
+  })
+
+  if (todayStudyTime) {
+    res.status(200).json(todayStudyTime)
+  } else {
+    res.sendStatus(404)
+  }
+}
+
 export const saveStudyTime = async (req, res) => {
   try {
     // Adjust the date to match the entire day
     const startOfDay = new Date(req.body.date)
-    startOfDay.setUTCHours(0, 0, 0, 0) // Set time to 00:00:00.000
+    startOfDay.setUTCHours(0, 0, 0, 0)
 
     const endOfDay = new Date(req.body.date)
-    endOfDay.setUTCHours(23, 59, 59, 999) // Set time to 23:59:59.999
+    endOfDay.setUTCHours(23, 59, 59, 999)
     // The update data
     const updateData = {
       studyTime: req.body.studyTime, // New study time in minutes, or any other update you want to make
-      date: startOfDay
+      date: startOfDay,
     }
 
     const options = {
@@ -58,7 +77,7 @@ export const saveStudyTime = async (req, res) => {
 
     res.sendStatus(200)
   } catch (err) {
-    console.log(err);
+    console.log(err)
     res.status(409).json({ err })
   }
 }
